@@ -455,7 +455,7 @@ export default function FileTree(props: {
 
   return (
     <div class={`flex flex-col gap-0.5 ${props.class ?? ""}`}>
-      <Show when={props.creating && props.creating.dir === props.path}>
+      <Show when={props.creating?.dir === props.path ? props.creating : undefined}>
         {(c) => (
           <InlineInput
             level={level + 1}

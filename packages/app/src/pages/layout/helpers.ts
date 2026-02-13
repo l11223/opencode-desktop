@@ -1,7 +1,7 @@
 import { getFilename } from "@opencode-ai/util/path"
 import { type Session } from "@opencode-ai/sdk/v2/client"
 
-import fuzzysort, { type Fuzzysort } from "fuzzysort"
+import fuzzysort from "fuzzysort"
 export const workspaceKey = (directory: string) => {
   const drive = directory.match(/^([A-Za-z]:)[\\/]+$/)
   if (drive) return `${drive[1]}${directory.includes("\\") ? "\\" : "/"}`

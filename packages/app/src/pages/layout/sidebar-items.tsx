@@ -15,7 +15,6 @@ import { Spinner } from "@opencode-ai/ui/spinner"
 import { Tooltip } from "@opencode-ai/ui/tooltip"
 import { getFilename } from "@opencode-ai/util/path"
 import { type Message, type Session, type TextPart } from "@opencode-ai/sdk/v2/client"
-import { type Fuzzysort } from "fuzzysort"
 import { For, Match, Show, Switch, createMemo, createSignal, onCleanup, type Accessor, type JSX } from "solid-js"
 import { relativeTime } from "./helpers"
 import { agentColor } from "@/utils/agent"
@@ -194,7 +193,7 @@ export const SessionItem = (props: SessionItemProps): JSX.Element => {
         </div>
         <span class="text-14-regular text-text-strong grow-1 min-w-0 overflow-hidden text-ellipsis truncate">
           <Show when={props.highlighted} fallback={props.session.title}>
-            {(result) => result().highlight((m, i) => <mark class="bg-surface-warning-strong/40 text-text-strong rounded-sm">{m}</mark>)}
+            {(result) => result().highlight((m: string, i: number) => <mark class="bg-surface-warning-strong/40 text-text-strong rounded-sm">{m}</mark>)}
           </Show>
         </span>
         <Show when={!props.session.summary}>

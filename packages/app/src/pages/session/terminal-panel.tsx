@@ -8,7 +8,7 @@ import type { DragEvent } from "@thisbeyond/solid-dnd"
 import { ConstrainDragYAxis } from "@/utils/solid-dnd"
 import { SortableTerminalTab } from "@/components/session"
 import { Terminal } from "@/components/terminal"
-import { SplitContainer } from "@/components/terminal-split.tsx"
+import { SplitContainer } from "@/components/terminal-split"
 import { useTerminal, type LocalPTY } from "@/context/terminal"
 import { useLanguage } from "@/context/language"
 import { useCommand } from "@/context/command"
@@ -110,7 +110,7 @@ export function TerminalPanel(props: {
                         icon="plus-small"
                         variant="ghost"
                         iconSize="large"
-                        onClick={props.terminal.new}
+                        onClick={() => props.terminal.new()}
                         aria-label={props.language.t("command.terminal.new")}
                       />
                     </TooltipKeybind>

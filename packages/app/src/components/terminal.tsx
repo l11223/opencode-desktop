@@ -101,7 +101,7 @@ export const Terminal = (props: TerminalProps) => {
   let term: Term | undefined
   let ghostty: Ghostty
   let serializeAddon: SerializeAddon
-  let searchAddon: SearchAddon
+  let searchAddon: SearchAddon = undefined!
   let fitAddon: FitAddon
   let handleResize: () => void
   let handleTextareaFocus: () => void
