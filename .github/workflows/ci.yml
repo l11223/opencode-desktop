@@ -1,0 +1,144 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-bun
+
+      - name: Configure git
+        run: |
+          git config --global user.email "bot@opencode.ai"
+          git config --global user.name "opencode"
+
+      - name: Typecheck
+        run: bun turbo typecheck
+
+      - name: Test
+        run: bun turbo test
+
+  build-cli:
+    name: build cli
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-bun
+
+      - name: Build CLI
+        run: ./packages/opencode/script/build.ts
+        env:
+          OPENCODE_VERSION: "0.0.0-dev"
+
+      - name: Upload CLI artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: opencode-cli
+          path: packages/opencode/dist
+          retention-days: 3
+
+  build-desktop:
+    name: desktop (${{ matrix.settings.name }})
+    needs: build-cli
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - name: macos-arm64
+            host: macos-latest
+            target: aarch64-apple-darwin
+          - name: macos-x64
+            host: macos-13
+            target: x86_64-apple-darwin
+          - name: windows
+            host: windows-latest
+            target: x86_64-pc-windows-msvc
+          - name: linux
+            host: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+    runs-on: ${{ matrix.settings.host }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-bun
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.settings.target }}
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages/desktop/src-tauri
+          shared-key: ${{ matrix.settings.target }}
+
+      - name: Download CLI artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: opencode-cli
+          path: packages/desktop/src-tauri/target/opencode-binaries
+
+      - name: Prepare sidecar
+        shell: bash
+        run: |
+          cd packages/desktop
+          mkdir -p src-tauri/sidecars
+          RUST_TARGET="${{ matrix.settings.target }}"
+          case "$RUST_TARGET" in
+            aarch64-apple-darwin) BIN_DIR="opencode-darwin-arm64" ;;
+            x86_64-apple-darwin)  BIN_DIR="opencode-darwin-x64" ;;
+            x86_64-pc-windows-msvc) BIN_DIR="opencode-windows-x64" ;;
+            x86_64-unknown-linux-gnu) BIN_DIR="opencode-linux-x64" ;;
+          esac
+          SRC="src-tauri/target/opencode-binaries/${BIN_DIR}/bin/opencode"
+          DEST="src-tauri/sidecars/opencode-cli-${RUST_TARGET}"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            SRC="${SRC}.exe"
+            DEST="${DEST}.exe"
+          fi
+          cp "$SRC" "$DEST"
+          echo "Copied sidecar: $SRC -> $DEST"
+
+      - name: Build Tauri
+        uses: tauri-apps/tauri-action@v0
+        with:
+          projectPath: packages/desktop
+          args: --target ${{ matrix.settings.target }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload desktop artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.settings.name }}
+          retention-days: 7
+          path: |
+            packages/desktop/src-tauri/target/${{ matrix.settings.target }}/release/bundle/**/*.dmg
+            packages/desktop/src-tauri/target/${{ matrix.settings.target }}/release/bundle/**/*.app
+            packages/desktop/src-tauri/target/${{ matrix.settings.target }}/release/bundle/**/*.deb
+            packages/desktop/src-tauri/target/${{ matrix.settings.target }}/release/bundle/**/*.rpm
+            packages/desktop/src-tauri/target/${{ matrix.settings.target }}/release/bundle/**/*.AppImage
+            packages/desktop/src-tauri/target/${{ matrix.settings.target }}/release/bundle/**/*.exe
+            packages/desktop/src-tauri/target/${{ matrix.settings.target }}/release/bundle/**/*.msi

@@ -1,0 +1,103 @@
+@import "@opencode-ai/ui/styles/tailwind";
+
+/* Theme transition — scoped to interactive elements only (Req 5.1) */
+button,
+input,
+select,
+textarea,
+a,
+[role="button"],
+[role="tab"],
+[data-component="collapsible-trigger"],
+[data-component="context-menu-item"] {
+  transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease;
+}
+
+/* Button press feedback (Req 5.4) */
+button:active:not(:disabled),
+[role="button"]:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Custom thin scrollbar — visible on hover (Req 9.1, 9.2) */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+}
+.thin-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: var(--surface-raised-base-hover);
+}
+
+/* Panel switch transition (Req 3.5) */
+[data-panel] {
+  transition: width 150ms ease, opacity 150ms ease;
+}
+
+/* GPU acceleration hints (Req 8.1) */
+[data-panel],
+[data-component="dialog-overlay"] {
+  will-change: opacity;
+}
+
+/* Dialog overlay fade-in (Req 3.5) */
+[data-component="dialog-overlay"] {
+  animation: fade-in 150ms ease;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@utility animate-fade-in {
+  animation: fade-in 150ms ease;
+}
+
+/* Search highlight mark styling (Req 4.2) */
+mark {
+  background-color: color-mix(in oklch, var(--surface-warning-base) 40%, transparent);
+  border-radius: var(--radius-sm);
+  color: inherit;
+}
+
+/* Git status semantic color classes (Req 2.3) */
+.text-diff-add {
+  color: var(--icon-diff-add-base);
+}
+.text-diff-delete {
+  color: var(--icon-diff-delete-base);
+}
+.text-warning {
+  color: var(--icon-warning-active);
+}
+
+/* Long-list off-screen rendering optimization (Req 8.3) */
+[data-session-id] {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 32px;
+}
+
+/* Focus-visible catch-all for elements without component-level styles (Req 5.5) */
+button:focus-visible:not(:disabled),
+[role="button"]:focus-visible:not(:disabled),
+a:focus-visible {
+  outline: 2px solid var(--border-selected);
+  outline-offset: 2px;
+}
+/* Let UI-package components keep their own shadow-based focus styles */
+[data-component] :is(button, [role="button"], a):focus-visible,
+[data-component]:is(button, [role="button"], a):focus-visible {
+  outline: none;
+}
+
